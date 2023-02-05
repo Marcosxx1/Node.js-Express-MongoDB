@@ -2,9 +2,10 @@
 const fs = require('fs');
 const http = require('http');
 const url = require('url');
+const slugify = require('slugify');
 const trocaTeplate = require('./modules/replaceTemplate');
 /*
-
+  
 ////////////////////////////////////////////
 ///FILES
 //BLOCKING SYNCHRONOUS WAY
@@ -41,11 +42,13 @@ const tempCard = fs.readFileSync(`${__dirname}/templates/template-card.html`, 'u
 const tempProduto = fs.readFileSync(`${__dirname}/templates/template-product.html`, 'utf-8');
 const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
 const dadosObjeto = JSON.parse(data);
+const slugs = dadosObjeto.map((elemento) => slugify(elemento.productName));
+console.log(slugs);
 /* .createServer(2 parametros) (requisição e resposta) */
 const server = http.createServer((requisicao, resposta) => {
     const { query, pathname } = url.parse(requisicao.url, true);
     // console.log(url.parse(requisicao.url, true));
-    //Pagina Overview
+    //Pagina Overview  
     if (pathname === '/' || pathname === '/overview') {
         resposta.writeHead(200, { 'Content-type': 'text/html' });
         const cardsHTML = dadosObjeto.map((elemento) => trocaTeplate(tempCard, elemento)).join('');

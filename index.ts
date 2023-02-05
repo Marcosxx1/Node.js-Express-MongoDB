@@ -1,9 +1,13 @@
 const fs = require('fs');
 const http = require('http');   
-const url = require('url');
-const trocaTeplate = require('./modules/replaceTemplate')
-/* 
+const url = require('url');  
 
+const slugify = require('slugify')
+
+const trocaTeplate = require('./modules/replaceTemplate')
+
+/* 
+  
 ////////////////////////////////////////////
 ///FILES
 //BLOCKING SYNCHRONOUS WAY
@@ -47,6 +51,8 @@ const tempProduto = fs.readFileSync(`${__dirname}/templates/template-product.htm
 const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8');
 const dadosObjeto = JSON.parse(data);
 
+const slugs = dadosObjeto.map((elemento: {productName: string}) => slugify(elemento.productName));
+ console.log(slugs);
 /* .createServer(2 parametros) (requisição e resposta) */
 const server = http.createServer(
     (requisicao: any | string,
@@ -55,7 +61,7 @@ const server = http.createServer(
        // console.log(url.parse(requisicao.url, true));
 
 
-        //Pagina Overview
+        //Pagina Overview  
         if (pathname === '/' || pathname === '/overview') {
             resposta.writeHead(200, { 'Content-type': 'text/html' });
 

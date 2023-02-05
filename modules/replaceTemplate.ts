@@ -20,4 +20,4 @@ module.exports = (temporario: string, produto: {
 
     if (!produto.organic) saida = saida.replace(/%NOT_ORGANIC%/g, 'not-organic')
     return saida;
-}
+}   

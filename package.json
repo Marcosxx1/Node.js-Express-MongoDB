@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "live-server"
+    "start": "live-server && nodemon" 
+
   },
   "repository": {
     "type": "git",
@@ -16,5 +17,11 @@
   "bugs": {
     "url": "https://github.com/Marcosxx1/Node.js-Express-MongoDB/issues"
   },
-  "homepage": "https://github.com/Marcosxx1/Node.js-Express-MongoDB#readme"
+  "homepage": "https://github.com/Marcosxx1/Node.js-Express-MongoDB#readme",
+  "dependencies": {
+    "slugify": "^1.6.5"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
 }
