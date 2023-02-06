@@ -1,25 +1,25 @@
-var fs = require("fs");
+const fs = require("fs");
 //Importando express
-var express = require("express");
+const express = require("express");
 //app agora tem todos os métodos de express
-var app = express();
+const app = express();
 //middleware, função que pode modificar os dados
 //de solicitação reebidos, fica entre a solicitação e resposta
 app.use(express.json());
-var tours = JSON.parse(fs.readFileSync("".concat(__dirname, "/dev-data/data/tours-simple.json")));
+const tours = JSON.parse(fs.readFileSync("".concat(__dirname, "/dev-data/data/tours-simple.json")));
 //adiciona os dados
 /* req = tem os dados necessários */
 app.post("/api/v1/tours", function (req, res) {
     // console.log(req.body);
-    var newId = tours[tours.length - 1].id + 1; //Calculando a nova ID para o novo POST
-    var newTour = Object.assign({ id: newId }, req.body); //copiando a estrutura de tours para newTour
+    const newId = tours[tours.length - 1].id + 1; //Calculando a nova ID para o novo POST
+    const newTour = Object.assign({ id: newId }, req.body); //copiando a estrutura de tours para newTour
     tours.push(newTour); //Colocando newTour no array de tours, linha 11
     //usando o módulo fs, e o módulo writeFile para escrever no arquivo 'tours.json', JSON.stringify(tours) Converts a JavaScript value to a JavaScript Object Notation (JSON) string.
     fs.writeFile("".concat(__dirname, "/dev-data/data/tours-simple.json"), JSON.stringify(tours), function (_err) {
         //201 = foi ecrito com sucesso
         res.status(201).json({
             status: "success",
-            //valor a ser 
+            //valor a ser
             data: {
                 tour: newTour
             }
