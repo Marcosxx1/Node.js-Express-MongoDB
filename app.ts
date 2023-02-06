@@ -83,7 +83,7 @@ app.get(
 //um get para pegar pela id depois do :
 //podemos deixar parametros incertos com ?  /:id/:nome?
 app.get('/api/v1/tours/:id', (req: any, res: any) => {
-    console.log(req.params);
+  //  console.log(req.params);
 
     //multiplicar uma string com um numero resulta em um numero
     const id = req.params.id * 1;
@@ -92,7 +92,7 @@ app.get('/api/v1/tours/:id', (req: any, res: any) => {
     //const tour = tours.find((el: { id: number; }) => el.id === id)
     let tour2: number = 0;
 
-    if (id > tours.length  ) {
+    if (id > tours.length) {
         return res.status(404).json({
             status: "fail",
             message: "ID not found"
@@ -114,6 +114,27 @@ app.get('/api/v1/tours/:id', (req: any, res: any) => {
         }
     })
 })
-app.listen(3000, function () {
-    console.log("Servidor rodando na porta 3000");
-});
+
+/* PUT - é esperado que receba o objeto inteiro
+   PATCH - algumas propriedades */
+
+   app.patch('/api/v1/tours/:id',(req: any, res: any) =>{
+    if(req.params.id > tours.length){
+        return res.status(404).json({
+            status: "fail",
+            message: "ID not found"
+        })
+    }
+
+ 
+    res.status(200).json({
+        status:'success',
+        data: {
+            tour: '<Updated toursss>'
+        }
+    })
+   })
+
+    app.listen(3000, function () {
+        console.log("Servidor rodando na porta 3000");
+    });

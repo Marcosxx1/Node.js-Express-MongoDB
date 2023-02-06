@@ -37,7 +37,7 @@ app.get("/api/v1/tours", function (req, res) {
 //um get para pegar pela id depois do :
 //podemos deixar parametros incertos com ?  /:id/:nome?
 app.get('/api/v1/tours/:id', function (req, res) {
-    console.log(req.params);
+    //  console.log(req.params);
     //multiplicar uma string com um numero resulta em um numero
     var id = req.params.id * 1;
     //Implementação do vídeo
@@ -59,6 +59,22 @@ app.get('/api/v1/tours/:id', function (req, res) {
         status: 'success',
         data: {
             tour2: tour2
+        }
+    });
+});
+/* PUT - é esperado que receba o objeto inteiro
+   PATCH - algumas propriedades */
+app.patch('/api/v1/tours/:id', function (req, res) {
+    if (req.params.id > tours.length) {
+        return res.status(404).json({
+            status: "fail",
+            message: "ID not found"
+        });
+    }
+    res.status(200).json({
+        status: 'success',
+        data: {
+            tour: '<Updated toursss>'
         }
     });
 });
