@@ -1,12 +1,16 @@
 const fs = require("fs");
 //Importando express
-var express = require("express");
+const express = require("express");
 //app agora tem todos os métodos de express
-var app = express();
+const morgan = require('morgan');
 
+const app = express();
+
+// 1) MIDDLEWARES
 //middleware, função que pode modificar os dados
 //de solicitação reebidos, fica entre a solicitação e resposta
 app.use(express.json());
+app.use(morgan('dev'))
 
 //implementar os tipos corretamente no projeto
 app.use((req: any, resp: any, next: any) => {
@@ -25,7 +29,7 @@ const tours = JSON.parse(
 );
 
 
-
+// 2) ROUTE HANDLERS
 //função para o get
 const getAllTours = (req: any, res: any) => {
     console.log(req.requestTime);
@@ -148,6 +152,8 @@ const deleteTour = (req: any, res: any) => {
 
 /* Forma mais prática para definir as rotas
 sem repetir muito código */
+
+// 3) ROUTES
 app.route('/api/v1/tours')
 .get(getAllTours)
 .post(createTour)
@@ -157,6 +163,8 @@ app.route('/api/v1/tours/:id')
 .patch(updateTour)
 .delete(deleteTour)
 
+
+// 4) START SERVER
 app.listen(3000, function () {
     console.log("Servidor rodando na porta 3000");
 });

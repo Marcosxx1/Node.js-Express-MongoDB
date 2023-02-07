@@ -1,6 +1,6 @@
 "use strict";
 /* 13. Building a (Very) Simple API */
-const fs = require('fs');
+//const fs = require('fs');
 const http = require('http');
 const url = require('url');
 /* Código aqui é executado apenas uma vez, assim que é executado */

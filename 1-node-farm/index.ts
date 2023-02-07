@@ -1,5 +1,5 @@
 /* 13. Building a (Very) Simple API */
-const fs = require('fs');
+//const fs = require('fs');
 const http = require('http');
 const url = require('url');
 

@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/Marcosxx1/Node.js-Express-MongoDB/issues"
   },
-  "homepage": "https://github.com/Marcosxx1/Node.js-Express-MongoDB#readme"
+  "homepage": "https://github.com/Marcosxx1/Node.js-Express-MongoDB#readme",
+  "dependencies": {
+    "morgan": "^1.10.0"
+  }
 }
