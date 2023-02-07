@@ -8,6 +8,18 @@ var app = express();
 //de solicitação reebidos, fica entre a solicitação e resposta
 app.use(express.json());
 
+//implementar os tipos corretamente no projeto
+app.use((req: any, resp: any, next: any) => {
+    console.log('Hello from the middleware ');
+    //sempre usar next() em middleware
+    next();
+})
+
+app.use((req: any, res: any, next: any) =>{
+    req.requestTime = new Date().toISOString();
+    next();
+})
+
 const tours = JSON.parse(
     fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`)
 );
@@ -16,7 +28,9 @@ const tours = JSON.parse(
 
 //função para o get
 const getAllTours = (req: any, res: any) => {
+    console.log(req.requestTime);
     res.status(200).json({
+        requestedAt: req.requestTime(),
         results: tours.length,
         status: "success",
         data: { tours },
@@ -137,7 +151,7 @@ sem repetir muito código */
 app.route('/api/v1/tours')
 .get(getAllTours)
 .post(createTour)
-
+ 
 app.route('/api/v1/tours/:id')
 .get(getTour)
 .patch(updateTour)

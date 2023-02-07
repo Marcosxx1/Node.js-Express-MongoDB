@@ -1,4 +1,5 @@
-var fs = require("fs");
+"use strict";
+const fs = require("fs");
 //Importando express
 var express = require("express");
 //app agora tem todos os métodos de express
@@ -6,21 +7,33 @@ var app = express();
 //middleware, função que pode modificar os dados
 //de solicitação reebidos, fica entre a solicitação e resposta
 app.use(express.json());
-var tours = JSON.parse(fs.readFileSync("".concat(__dirname, "/dev-data/data/tours-simple.json")));
+//implementar os tipos corretamente no projeto
+app.use((req, resp, next) => {
+    console.log('Hello from the middleware ');
+    //sempre usar next() em middleware
+    next();
+});
+app.use((req, res, next) => {
+    req.requestTime = new Date().toISOString();
+    next();
+});
+const tours = JSON.parse(fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`));
 //função para o get
-var getAllTours = function (req, res) {
+const getAllTours = (req, res) => {
+    console.log(req.requestTime);
     res.status(200).json({
+        requestedAt: req.requestTime,
         results: tours.length,
         status: "success",
-        data: { tours: tours }
+        data: { tours },
     });
 };
-var getTour = function (req, res) {
+const getTour = (req, res) => {
     //multiplicar uma string com um numero resulta em um numero
-    var id = req.params.id * 1;
+    const id = req.params.id * 1;
     //Implementação do vídeo
     //const tour = tours.find((el: { id: number; }) => el.id === id)
-    var tour2 = 0;
+    let tour2 = 0;
     if (id > tours.length) {
         return res.status(404).json({
             status: "fail",
@@ -28,7 +41,7 @@ var getTour = function (req, res) {
         });
     }
     //minha implementação
-    for (var i = 0; i < tours.length; i++) {
+    for (let i = 0; i < tours.length; i++) {
         if (tours[i].id === id) {
             tour2 = tours[i];
         }
@@ -36,7 +49,7 @@ var getTour = function (req, res) {
     res.status(200).json({
         status: 'success',
         data: {
-            tour2: tour2
+            tour2
         }
     });
 };
@@ -44,24 +57,24 @@ var getTour = function (req, res) {
 /* req = tem os dados necessários */
 app.post("/api/v1/tours");
 //cria variável para segurar a função de criar tour
-var createTour = function (req, res) {
+const createTour = (req, res) => {
     // console.log(req.body);
-    var newId = tours[tours.length - 1].id + 1; //Calculando a nova ID para o novo POST
-    var newTour = Object.assign({ id: newId }, req.body); //copiando a estrutura de tours para newTour
+    const newId = tours[tours.length - 1].id + 1; //Calculando a nova ID para o novo POST
+    const newTour = Object.assign({ id: newId }, req.body); //copiando a estrutura de tours para newTour
     tours.push(newTour); //Colocando newTour no array de tours, linha 11
     //usando o módulo fs, e o módulo writeFile para escrever no arquivo 'tours.json', JSON.stringify(tours) Converts a JavaScript value to a JavaScript Object Notation (JSON) string.
-    fs.writeFile("".concat(__dirname, "/dev-data/data/tours-simple.json"), JSON.stringify(tours), function (_err) {
+    fs.writeFile(`${__dirname}/dev-data/data/tours-simple.json`, JSON.stringify(tours), (_err) => {
         //201 = foi ecrito com sucesso
         res.status(201).json({
             status: "success",
             //valor a ser passado
             data: {
-                tour: newTour
-            }
+                tour: newTour,
+            },
         });
     });
 };
-var updateTour = function (req, res) {
+const updateTour = (req, res) => {
     if (req.params.id > tours.length) {
         return res.status(404).json({
             status: "fail",
@@ -75,7 +88,7 @@ var updateTour = function (req, res) {
         }
     });
 };
-var deleteTour = function (req, res) {
+const deleteTour = (req, res) => {
     if (req.params.id > 1 * tours.length) {
         return res.status(404).json({
             status: "fail",
@@ -107,7 +120,8 @@ app.route('/api/v1/tours')
     .post(createTour);
 app.route('/api/v1/tours/:id')
     .get(getTour)
-    .patch(updateTour)["delete"](deleteTour);
+    .patch(updateTour)
+    .delete(deleteTour);
 app.listen(3000, function () {
     console.log("Servidor rodando na porta 3000");
 });
