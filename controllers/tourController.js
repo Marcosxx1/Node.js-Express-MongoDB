@@ -1,57 +1,80 @@
+// Importa o módulo 'fs'
 // eslint-disable-next-line no-unused-vars
 const fs = require('fs');
+
 const Tour = require('./../models/tourModel');
 
+const catchAsync = require('./../utils/catchAsync');
+
+// Middleware que define um alias para as queries de tours
 exports.aliasToTours = (req, res, next) => {
+  // Define o limite de itens retornados como 5
   req.query.limit = '5';
+  // Ordena os itens por ratingsAverage (ordem decrescente) e price (ordem crescente)
   req.query.sort = '-ratingsAverage,price';
+  // Seleciona somente os campos name, price, ratingsAverage, summary e difficulty
   req.query.fields = 'name, price, ratingsAverage, summary, difficulty';
+  // Chama a próxima função do middleware
   next();
 };
 
+// Classe que define métodos de filtragem, ordenação, seleção e paginação das queries de tours
 class APIFeatures {
+  // Construtor da classe, recebe uma query e uma string de query
   constructor(query, queryString) {
     this.query = query;
     this.queryString = queryString;
   }
 
+  // Método que filtra a query de acordo com a string de query passada
   filter() {
+    // Cria uma cópia da string de query
     const queryObj = { ...this.queryString };
+    // Define os campos que não serão incluídos na query
     const excludedFields = ['page', 'sort', 'limit', 'fields'];
+    // Remove os campos excluídos da string de query
     excludedFields.forEach(el => delete queryObj[el]);
 
-    //1B) Advanced filtering
+    // Aplica filtros avançados se estiverem presentes na string de query
     let queryStr = JSON.stringify(queryObj);
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `${match}`);
 
+    // Aplica a query com os filtros
     this.query = this.query.find(JSON.parse(queryStr));
-    // let query = Tour.find(JSON.parse(queryStr));
 
     return this;
   }
 
+  // Método que ordena a query de acordo com a string de query passada
   sort() {
+    // Ordena a query de acordo com a string de query 'sort'
     if (this.queryString.sort) {
       const sortBy = this.queryString.sort.split(',').join(' ');
       this.query = this.query.sort(sortBy);
     } else {
+      // Ordena por data de criação caso não haja um campo de ordenação definido
       this.query = this.query.sort('-createdAt');
     }
 
     return this;
   }
 
+  // Método que seleciona os campos da query de acordo com a string de query passada
   limitFields() {
+    // Seleciona somente os campos especificados na string de query 'fields'
     if (this.queryString.fields) {
       const fields = this.queryString.fields.split(',').join(' ');
       this.query = this.query.select(fields);
     } else {
+      // Remove o campo '__v' caso não haja um campo de seleção definido
       this.query = this.query.select('-__v');
     }
     return this;
   }
 
+  // Método que define a paginação da query de acordo com a string de query passada
   paginate() {
+    // Define a página e o limite de itens por página
     const page = this.queryString.page * 1 || 1;
     const limit = this.queryString.limit * 1 || 100;
     const skip = (page - 1) * limit;
@@ -62,240 +85,151 @@ class APIFeatures {
   }
 }
 
-// eslint-disable-next-line node/no-unsupported-features/es-syntax
-exports.getAllTours = async (req, res) => {
-  try {
-    //1A0 Criando consulta(query)
-    /* const queryObj = { ...req.query };
-    const excludeFields = ['page', 'sort', 'limit', 'fields'];
-    excludeFields.forEach(el => delete queryObj[el]);
+exports.getAllTours = catchAsync(async (req, res, next) => {
+  const features = new APIFeatures(Tour.find(), req.query)
+    .filter()
+    .sort()
+    .limitFields()
+    .paginate();
+  const tours = await features.query;
 
-    //1B) Advanced filtering
-    let queryStr = JSON.stringify(queryObj);
-    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, match => `${match}`);
+  //Enviando resposta
+  res.status(200).json({
+    status: 'success',
+    results: tours.length,
+    data: {
+      tours
+    }
+  });
+});
 
-    let query = Tour.find(JSON.parse(queryStr));
- */
-    //2)Sorting
-    /*     if (req.query.sort) {
-          const sortBy = req.query.sort.split(',').join(' ');
-          query = query.sort(sortBy);
-        } else {
-          query = query.sort('-createdAt');
-        } */
+exports.getTour = catchAsync(async (req, res, next) => {
+  const tour = await Tour.findById(req.params.id);
+  // o código acima é igual a:
+  //Tour.findOne({_id: req.params.id})
 
-    //3)Field limiting
-    /*     if (req.query.fields) {
-          const fields = req.query.fields.split(',').join(' ');
-          query = query.select(fields);
-        } else {
-          query = query.select('-__v');
+  res.status(200).json({
+    status: 'success',
+    data: {
+      tour
+    }
+  });
+});
+
+exports.createTour = catchAsync(async (req, res, next) => {
+  const newTour = await Tour.create(req.body);
+
+  res.status(200).json({
+    status: 'success',
+    requestedAt: req.requestTime,
+    data: {
+      newTour
+    }
+  });
+});
+
+exports.updateTour = catchAsync(async (req, res, next) => {
+  //o item será atualizado pela ID
+  const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+    runValidators: true
+  });
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      tour
+    }
+  });
+});
+
+exports.deleteTour = catchAsync(async (req, res) => {
+  await Tour.findByIdAndDelete(req.params.id, req.body);
+
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});
+
+exports.getTourStats = catchAsync(async (req, res, next) => {
+  const stats = await Tour.aggregate([
+    {
+      //$match = selecionar, filtrar documentos
+      $match: { ratingsAverage: { $gte: 4.5 } }
+    },
+    {
+      //Agrupa documentos juntos, com acumuladores, para médias também
+      $group: {
+        _id: { $toUpper: '$difficulty' },
+        numTours: { $sum: 1 },
+        numRatings: { $sum: '$ratingsQuantity' },
+        avgRating: { $avg: '$ratingsAverage' },
+        avgPrice: { $avg: '$price' },
+        minPrice: { $min: '$price' },
+        maxPrice: { $max: '$price' }
+      }
+    },
+    {
+      $sort: { avgPrice: 1 }
+    } /* ,
+    {
+      $match: { _id: { $ne: 'EASY' } }
+    } */
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      stats
+    }
+  });
+});
+
+exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
+  const year = req.params.year * 1; //transformando em um número a req que esta chengando
+  const plan = await Tour.aggregate([
+    {
+      /* $unwind descostroi um array que chega do input 
+      e da o output um documento para cada elemento do array */
+      $unwind: '$startDates'
+    },
+    {
+      $match: {
+        startDates: {
+          $gte: new Date(`${year}-01-01`),
+          $lte: new Date(`${year}-12-31`)
         }
-     */
-    //Pagination
-    /*     const page = req.query.page * 1 || 1;
-        const limit = req.query.limit * 1 || 100;
-        const skip = (page - 1) * limit;
-    
-        query = query.skip(skip).limit(limit);
-    
-        if (req.query.page) {
-          const numTours = await Tour.countDocuments();
-          if (skip >= numTours) throw new Error('This page does not exists');
-        } */
-
-    //Executando consulta(query)
-    const features = new APIFeatures(Tour.find(), req.query)
-      .filter()
-      .sort()
-      .limitFields()
-      .paginate();
-    const tours = await features.query;
-
-    //Enviando resposta
-    res.status(200).json({
-      status: 'success',
-      results: tours.length,
-      data: {
-        tours
       }
-    });
-  } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err
-    });
-  }
-};
-
-exports.getTour = async (req, res) => {
-  try {
-    const tour = await Tour.findById(req.params.id);
-    // o código acima é igual a:
-    //Tour.findOne({_id: req.params.id})
-
-    res.status(200).json({
-      status: 'success',
-      data: {
-        tour
+    },
+    {
+      $group: {
+        _id: { $month: '$startDates' },
+        numToursStarts: { $sum: 1 },
+        tours: { $push: '$name' }
       }
-    });
-  } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err
-    });
-  }
-};
-
-exports.createTour = async (req, res) => {
-  try {
-    const newTour = await Tour.create(req.body);
-
-    res.status(200).json({
-      status: 'success',
-      requestedAt: req.requestTime,
-      data: {
-        newTour
+    },
+    {
+      $addFields: { month: '$_id' }
+    },
+    {
+      $project: {
+        _id: 0
       }
-    });
-  } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err
-    });
-  }
-};
+    },
+    {
+      $sort: { numToursStarts: -1 }
+    },
+    {
+      $limit: 6
+    }
+  ]);
 
-exports.updateTour = async (req, res) => {
-  try {
-    //o item será atualizado pela ID
-    const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    });
+  res.status(200).json({
+    status: 'success',
+    data: {
+      plan
+    }
+  });
 
-    res.status(200).json({
-      status: 'success',
-      data: {
-        tour
-      }
-    });
-  } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err
-    });
-  }
-};
-
-exports.deleteTour = async (req, res) => {
-  try {
-    await Tour.findByIdAndDelete(req.params.id, req.body);
-
-    res.status(204).json({
-      status: 'success',
-      data: null
-    });
-  } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err
-    });
-  }
-};
-
-exports.getTourStats = async (req, res) => {
-  try {
-    const stats = await Tour.aggregate([
-      {
-        //$match = selecionar, filtrar documentos
-        $match: { ratingsAverage: { $gte: 4.5 } }
-      },
-      {
-        //Agrupa documentos juntos, com acumuladores, para médias também
-        $group: {
-          _id: { $toUpper: '$difficulty' },
-          numTours: { $sum: 1 },
-          numRatings: { $sum: '$ratingsQuantity' },
-          avgRating: { $avg: '$ratingsAverage' },
-          avgPrice: { $avg: '$price' },
-          minPrice: { $min: '$price' },
-          maxPrice: { $max: '$price' }
-        }
-      },
-      {
-        $sort: { avgPrice: 1 }
-      } /* ,
-      {
-        $match: { _id: { $ne: 'EASY' } }
-      } */
-    ]);
-
-    res.status(200).json({
-      status: 'success',
-      data: {
-        stats
-      }
-    });
-  } catch (error) {
-    res.status(404).json({
-      status: 'fail',
-      message: error
-    });
-  }
-};
-
-exports.getMonthlyPlan = async (req, res) => {
-  try {
-    const year = req.params.year * 1; //transformando em um número a req que esta chengando
-    const plan = await Tour.aggregate([
-      {
-        /* $unwind descostroi um array que chega do input 
-        e da o output um documento para cada elemento do array */
-        $unwind: '$startDates'
-      },
-      {
-        $match: {
-          startDates: {
-            $gte: new Date(`${year}-01-01`),
-            $lte: new Date(`${year}-12-31`)
-          }
-        }
-      },
-      {
-        $group: {
-          _id: { $month: '$startDates' },
-          numToursStarts: { $sum: 1 },
-          tours: { $push: '$name' }
-        }
-      },
-      {
-        $addFields: { month: '$_id' }
-      },
-      {
-        $project: {
-          _id: 0
-        }
-      },
-      {
-        $sort: { numToursStarts: -1 }
-      },
-      {
-        $limit: 6
-      }
-    ]);
-
-    res.status(200).json({
-      status: 'success',
-      data: {
-        plan
-      }
-    });
-  } catch (error) {
-    res.status(404).json({
-      status: 'fail',
-      message: error
-    });
-  }
-};
+});

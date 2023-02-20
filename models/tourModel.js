@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+// eslint-disable-next-line no-unused-vars
 const slugify = require('slugify');
 
 const tourSchema = new mongoose.Schema(
@@ -22,7 +23,11 @@ const tourSchema = new mongoose.Schema(
     },
     difficulty: {
       type: String,
-      required: [true, 'A tour must have a difficulty']
+      required: [true, 'A tour must have a difficulty'],
+      enum: {
+        values: ['easy', 'medium', 'difficult'],
+        message: 'Difficulty is either: easy, medium or difficult'
+      }
     },
     ratingsAverage: {
       type: Number,
@@ -74,7 +79,7 @@ const tourSchema = new mongoose.Schema(
 /* Virtual Properties são campos que podemos definir
 no esquema, que não serão salvas na base de dados
 converção por exemplo */
-tourSchema.virtual('durationWeeks').get(function () {
+tourSchema.virtual('durationWeeks').get(function() {
   return this.duration / 7;
 });
 
@@ -92,31 +97,31 @@ tourSchema.pre('save', function (next) {
 });
  */
 /* post é executado depois de todos os .pre() são executados */
-tourSchema.post('save', function (doc, next) {
+tourSchema.post('save', function(doc, next) {
   console.log(doc);
   next();
 });
 
 //QUERY MIDDLEWARE
-tourSchema.pre(/^find/, function (next) {
+tourSchema.pre(/^find/, function(next) {
   this.find({ secretTour: { $ne: true } });
   this.start = Date.now();
   next();
 });
 
-tourSchema.post(/^find/, function (docs, next) {
+tourSchema.post(/^find/, function(docs, next) {
   console.log(`Query took ${Date.now() - this.start} milliseconsds`);
   console.log(docs);
   next();
 });
 
 //AGREGATION MIDDLEWARE
-tourSchema.pre('aggregate', function (next) {
-  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } })
+tourSchema.pre('aggregate', function(next) {
+  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
 
   console.log(this.pipeline());
   next();
-})
+});
 
 const Tour = mongoose.model('Tour', tourSchema);
 
