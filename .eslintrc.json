@@ -1,0 +1,11 @@
+{
+	"prettier/prettier": [
+		"error",
+		{},
+		{
+			"usePrettierrc": true,
+			"withNodeModules": false,
+			"files": ["*.js", "*.jsx", "*.ts", "*.tsx"]
+		}
+	]
+}

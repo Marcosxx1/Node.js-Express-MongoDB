@@ -1,8 +1,6 @@
-/* eslint-disable import/no-unresolved */
 const mongoose = require('mongoose');
-// eslint-disable-next-line node/no-missing-require
 const validator = require('validator');
-//name, email photo, password, passwordConfirm
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -22,10 +20,28 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Please provide a password'],
         minLength: 8,
     },
-    passwordConfirm: {
+    confirmPassword: {
         type: String,
         required: [true, 'Please confirm you password'],
+        validate: {
+            //Esse validator só funciona no SAVE e CREATE
+            validator: function (el) {
+                return el === this.password;
+            },
+            message: 'Passwords are not the same!',
+        },
     },
+});
+
+userSchema.pre('save', async function (next) {
+    //Apenas roda esta função se a senha foi alterada
+    if (!this.isModified('password')) return next();
+
+    //Encripta a senha com o custo de 12
+    this.password = await bcrypt.hash(this.password, 12);
+
+    this.confirmPassword = undefined;
+    next();
 });
 
 const User = mongoose.model('User', userSchema);
