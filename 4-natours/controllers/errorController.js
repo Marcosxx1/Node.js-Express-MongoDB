@@ -1,18 +1,24 @@
 /* eslint-disable prettier/prettier */
+const { JsonWebTokenError } = require('jsonwebtoken');
 const AppError = require('./../utils/appError');
 
-const hadleCastErrorDB = (err) => {
+const hadleCastErrorDB = err => {
     const message = `Invalid ${err.path}:  ${err.value}`;
     return new AppError(message, 400);
 };
 
-const handleDuplicateFieldsDB = (err) => {
+const handleDuplicateFieldsDB = err => {
     const field = Object.keys(err.keyValue);
     const value = Object.values(err.keyValue);
     const message = `Duplicate ${field}: ${value}`;
 
     return new AppError(message, 400);
 };
+
+const handleJWTEr = () => new AppError('Invalid token, please login agan', 401);
+
+const handleJWTExpiredError = () =>
+    new AppError('Expired token, please login again', 401);
 
 const sendErrorDev = (err, res) => {
     res.status(err.statusCode).json({
@@ -23,8 +29,8 @@ const sendErrorDev = (err, res) => {
     });
 };
 
-const handleValidationErrorDB = (err) => {
-    const errors = Object.values(err.errors).map((el) => el.message);
+const handleValidationErrorDB = err => {
+    const errors = Object.values(err.errors).map(el => el.message);
     const message = `Invalid input data. ${errors.join('. ')}`;
     return new AppError(message, 400);
 };
@@ -63,6 +69,9 @@ module.exports = (err, req, res, next) => {
 
         if (error._message === 'Validation failed')
             error = handleValidationErrorDB(error);
+
+        if (error.name === 'JsonWebTokenError') error = handleJWTEr();
+        if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
         sendErrorProd(error, res);
     }
 };
