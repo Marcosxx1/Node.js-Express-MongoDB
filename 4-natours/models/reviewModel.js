@@ -30,10 +30,33 @@ const reviewSchema = new mongoose.Schema(
     },
     {
         toJSON: { virtuals: true },
+
         toObject: { virtuals: true },
     }
 );
 
+reviewSchema.pre(/^find/, function (next) {
+    /*     this.populate({
+        path: 'tour',
+        select: 'name',
+    }).populate({
+        path: 'user',
+        select: 'name photo',
+    });
+ */
+
+    this.populate({
+        path: 'user',
+        select: 'name photo',
+    });
+    next();
+});
+
 const Review = mongoose.model('Review', reviewSchema);
 
 module.exports = Review;
+
+//POST /tour234fssd/reviews
+//GET /tour234fssd/reviews
+//POST /tour234fssd/reviews/43234s
+
