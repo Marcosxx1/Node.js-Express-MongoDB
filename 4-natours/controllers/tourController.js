@@ -131,6 +131,7 @@ exports.createTour = catchAsync(async (req, res, _next) => {
             tour: newTour,
         },
     });
+    await newTour.save();
 });
 
 exports.updateTour = catchAsync(async (req, res, next) => {

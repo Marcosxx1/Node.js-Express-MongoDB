@@ -2,7 +2,7 @@
 const mongoose = require('mongoose');
 // eslint-disable-next-line no-unused-vars
 const slugify = require('slugify');
-
+const User = require('./userModel');
 const tourSchema = new mongoose.Schema(
     {
         name: {
@@ -72,6 +72,39 @@ const tourSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        startLocation: {
+            //GeoJSON
+            type: {
+                type: String,
+                default: 'Point',
+                enum: ['Point'],
+            },
+            coordinates: [Number],
+            address: String,
+            description: String,
+        },
+        locations: [
+            {
+                type: {
+                    type: String,
+                    default: 'Point',
+                    enum: ['Point'],
+                },
+                coordinates: [Number],
+                address: String,
+                description: String,
+                day: Number,
+            },
+        ],
+        guides: [
+            //será 'populado' com os dados das ID's passadas
+            //Apenas na query, não será salvo
+            //veja tourController getTour .populate
+            {
+                type: mongoose.Schema.ObjectId,
+                ref: 'User',
+            },
+        ],
     },
     {
         toJSON: { virtuals: true },
@@ -90,32 +123,45 @@ tourSchema.virtual('durationWeeks').get(function () {
 /* 
 DOCUMENT MIDDLEWARE: 
 .pre() é rodado antes do .save() e .create() */
-/* tourSchema.pre('save', function (next) {
-  this.slug = slugify(this.name, { lower: true });
-  next();
+tourSchema.pre('save', function (next) {
+    this.slug = slugify(this.name, { lower: true });
+    next();
 });
 
+/* 
+//Responssável por incorporar usuários à tours 'embbeding'
+tourSchema.pre('save', async function (next) {
+    const guidesPromisses = this.guides.map(async id => User.findById(id));
+    this.guides = await promises.all(guidesPromisses);
+    next();
+});
+ */
+/*
 tourSchema.pre('save', function (next) {
   console.log('will save document...');
   next();
 });
  */
 /* post é executado depois de todos os .pre() são executados */
+
 tourSchema.post('save', function (doc, next) {
-    // console.log(doc);
     next();
 });
 
 //QUERY MIDDLEWARE
 tourSchema.pre(/^find/, function (next) {
     this.find({ secretTour: { $ne: true } });
+
     this.start = Date.now();
     next();
 });
 
-tourSchema.post(/^find/, function (docs, next) {
-    console.log(`Query took ${Date.now() - this.start} milliseconsds`);
-    //console.log(docs);
+
+tourSchema.pre(/^find/, function (next) {
+    this.populate({
+        path: 'guides',
+        select: '-__v -passwordChagedAt',
+    });
     next();
 });
 
@@ -124,6 +170,13 @@ tourSchema.pre('aggregate', function (next) {
     this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
 
     console.log(this.pipeline());
+    next();
+});
+
+
+tourSchema.post(/^find/, function (docs, next) {
+    console.log(`Query took ${Date.now() - this.start} milliseconsds`);
+    //console.log(docs);
     next();
 });
 
