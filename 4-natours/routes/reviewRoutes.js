@@ -7,7 +7,7 @@ const router = express.Router({ mergeParams: true });
 router.use(authController.protect);
 
 router
-    .route('/')
+    .route('/') 
     //getAllReviews por enquanto só pega um array com todas as reviews
     .get(reviewController.getAllReviews)
     .post(
