@@ -7,25 +7,24 @@ const router = express.Router({ mergeParams: true });
 router.use(authController.protect);
 
 router
-    .route('/') 
-    //getAllReviews por enquanto só pega um array com todas as reviews
-    .get(reviewController.getAllReviews)
-    .post(
-        authController.restrictTo('user'),
-        reviewController.setTourUserIds,
-        reviewController.createReview
-    );
+  .route('/')
+  .get(reviewController.getAllReviews)
+  .post(
+    authController.restrictTo('user'),
+    reviewController.setTourUserIds,
+    reviewController.createReview
+  );
+
 router
-    .route('/:id')
-    .get(reviewController.getReview)
-    .patch(
-        authController.restrictTo('user', 'admin'),
-        reviewController.updateReview
-    )
-    .delete(
-        authController.restrictTo('user', 'admin'),
-        reviewController.deleteReview
-    );
+  .route('/:id')
+  .get(reviewController.getReview)
+  .patch(
+    authController.restrictTo('user', 'admin'),
+    reviewController.updateReview
+  )
+  .delete(
+    authController.restrictTo('user', 'admin'),
+    reviewController.deleteReview
+  );
 
 module.exports = router;
- 
